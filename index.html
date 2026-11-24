@@ -1,0 +1,1920 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>PIXEL MOTOR // 144Hz Overclocked Engine Simulator</title>
+  <style>
+    :root {
+      --bg-dark: #070b12;
+      --panel-bg: rgba(15, 23, 38, 0.88);
+      --panel-border: rgba(56, 189, 248, 0.22);
+      --cyan: #38bdf8;
+      --emerald: #10b981;
+      --amber: #f59e0b;
+      --rose: #f43f5e;
+      --text-main: #f1f5f9;
+      --text-dim: #94a3b8;
+      --font-mono: 'Courier New', Courier, monospace;
+      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100dvh;
+      overflow: hidden;
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      font-family: var(--font-sans);
+    }
+
+    #app {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      height: 100dvh;
+      max-width: 680px;
+      margin: 0 auto;
+      background: radial-gradient(circle at 50% 35%, #0f172a 0%, #05080f 100%);
+      border-left: 1px solid rgba(255, 255, 255, 0.06);
+      border-right: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    /* HEADER */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 12px;
+      background: rgba(10, 15, 26, 0.95);
+      border-bottom: 1px solid var(--panel-border);
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .brand-title {
+      font-family: var(--font-mono);
+      font-weight: 800;
+      font-size: 13px;
+      letter-spacing: 0.8px;
+      color: var(--cyan);
+    }
+
+    .badge-fps {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: rgba(16, 185, 129, 0.16);
+      color: var(--emerald);
+      border: 1px solid rgba(16, 185, 129, 0.4);
+    }
+
+    .badge-unlimited {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: rgba(245, 158, 11, 0.15);
+      color: var(--amber);
+      border: 1px solid rgba(245, 158, 11, 0.35);
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-icon {
+      background: rgba(30, 41, 59, 0.85);
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      color: var(--text-main);
+      border-radius: 8px;
+      padding: 5px 9px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: transform 0.08s ease, border-color 0.15s ease;
+    }
+
+    .btn-icon:active {
+      transform: scale(0.95);
+    }
+
+    .btn-icon.active {
+      border-color: var(--cyan);
+      color: var(--cyan);
+      background: rgba(56, 189, 248, 0.14);
+    }
+
+    /* ENGINE SELECTOR BAR */
+    .engine-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 12px;
+      background: rgba(15, 23, 42, 0.75);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .engine-info {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    .engine-name {
+      font-size: 13px;
+      font-weight: 800;
+      color: #fff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .engine-sub {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--text-dim);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .btn-select-engine {
+      background: linear-gradient(135deg, #0284c7, #2563eb);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 7px 12px;
+      font-size: 11px;
+      font-weight: 800;
+      cursor: pointer;
+      white-space: nowrap;
+      box-shadow: 0 2px 10px rgba(37, 99, 235, 0.35);
+    }
+
+    .btn-select-engine:active {
+      transform: scale(0.96);
+    }
+
+    /* VIEWPORT CANVAS (UNOBSTRUCTED) */
+    .viewport-wrapper {
+      position: relative;
+      flex: 1;
+      min-height: 0;
+      width: 100%;
+      background: #060a12;
+      overflow: hidden;
+    }
+
+    #engineCanvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* SUB-TOOLBAR UNDER CANVAS */
+    .view-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 12px;
+      background: rgba(10, 15, 26, 0.95);
+      border-top: 1px solid rgba(255, 255, 255, 0.07);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .pill-group {
+      display: flex;
+      background: rgba(15, 23, 42, 0.95);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      border-radius: 7px;
+      padding: 2px;
+      gap: 2px;
+    }
+
+    .pill-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-dim);
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 700;
+      padding: 4px 8px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .pill-btn.active {
+      background: var(--cyan);
+      color: #030712;
+    }
+
+    /* TELEMETRY STRIP */
+    .telemetry-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+      padding: 6px 12px;
+      background: rgba(12, 19, 33, 0.9);
+      flex-shrink: 0;
+    }
+
+    .tele-card {
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(148, 163, 184, 0.14);
+      border-radius: 8px;
+      padding: 5px 8px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .tele-label {
+      font-size: 9px;
+      font-weight: 700;
+      color: var(--text-dim);
+      letter-spacing: 0.4px;
+    }
+
+    .tele-val {
+      font-family: var(--font-mono);
+      font-size: 14px;
+      font-weight: 800;
+      color: #fff;
+      margin-top: 1px;
+    }
+
+    .tele-val.cyan { color: var(--cyan); }
+    .tele-val.amber { color: var(--amber); }
+    .tele-val.emerald { color: var(--emerald); }
+
+    /* RPM PROGRESS BAR */
+    .rpm-bar-wrap {
+      padding: 0 12px 6px 12px;
+      background: rgba(12, 19, 33, 0.9);
+      flex-shrink: 0;
+    }
+
+    .rpm-track {
+      width: 100%;
+      height: 7px;
+      background: rgba(30, 41, 59, 0.9);
+      border-radius: 99px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .rpm-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #10b981 0%, #38bdf8 55%, #f59e0b 82%, #f43f5e 100%);
+      transition: width 0.05s linear;
+    }
+
+    /* BOTTOM CONTROL DECK */
+    .control-deck {
+      display: grid;
+      grid-template-columns: 76px 1fr 84px;
+      gap: 8px;
+      padding: 8px 12px 12px 12px;
+      background: rgba(8, 13, 23, 0.98);
+      border-top: 1px solid var(--panel-border);
+      height: 124px;
+      flex-shrink: 0;
+    }
+
+    .btn-start {
+      border-radius: 12px;
+      border: 2px solid rgba(16, 185, 129, 0.5);
+      background: radial-gradient(circle at center, rgba(16, 185, 129, 0.22), rgba(6, 78, 59, 0.5));
+      color: #ecfdf5;
+      font-weight: 900;
+      font-size: 11px;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      transition: all 0.12s ease;
+    }
+
+    .btn-start.running {
+      border-color: rgba(244, 63, 94, 0.65);
+      background: radial-gradient(circle at center, rgba(244, 63, 94, 0.25), rgba(136, 19, 55, 0.5));
+      color: #ffe4e6;
+    }
+
+    .btn-start:active {
+      transform: scale(0.95);
+    }
+
+    .pedal-gas {
+      border-radius: 14px;
+      border: 2px solid rgba(56, 189, 248, 0.45);
+      background: linear-gradient(180deg, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.98) 100%);
+      color: #fff;
+      font-weight: 900;
+      font-size: 16px;
+      letter-spacing: 1.5px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.12);
+      transition: transform 0.06s ease, border-color 0.1s ease, background 0.1s ease;
+    }
+
+    .pedal-gas.pressed {
+      transform: scale(0.97) translateY(2px);
+      border-color: var(--amber);
+      background: linear-gradient(180deg, rgba(245, 158, 11, 0.35) 0%, rgba(180, 83, 9, 0.5) 100%);
+      color: #fef3c7;
+    }
+
+    .pedal-sub {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--text-dim);
+      letter-spacing: 0;
+    }
+
+    .shifter-col {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .gear-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4px;
+      flex: 1;
+    }
+
+    .btn-gear {
+      background: rgba(30, 41, 59, 0.9);
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      color: #fff;
+      border-radius: 8px;
+      font-weight: 800;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .btn-gear:active {
+      background: var(--cyan);
+      color: #030712;
+    }
+
+    .btn-brake {
+      height: 36px;
+      border-radius: 8px;
+      border: 1px solid rgba(244, 63, 94, 0.45);
+      background: rgba(244, 63, 94, 0.16);
+      color: #fda4af;
+      font-weight: 800;
+      font-size: 10px;
+      cursor: pointer;
+    }
+
+    .btn-brake.pressed {
+      background: var(--rose);
+      color: #fff;
+    }
+
+    /* MODAL ENGINE SELECTOR & AUDIO TUNING */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(3, 7, 18, 0.85);
+      backdrop-filter: blur(6px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 50;
+      padding: 14px;
+    }
+
+    .modal-backdrop.open {
+      display: flex;
+    }
+
+    .modal-card {
+      width: 100%;
+      max-width: 520px;
+      max-height: 86dvh;
+      background: #0f172a;
+      border: 1px solid var(--panel-border);
+      border-radius: 16px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.75);
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .modal-title {
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--cyan);
+    }
+
+    .btn-close {
+      background: rgba(30, 41, 59, 0.9);
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      color: #fff;
+      border-radius: 8px;
+      padding: 4px 10px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .modal-body {
+      padding: 12px 16px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .section-label {
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--amber);
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      margin-bottom: 6px;
+    }
+
+    .preset-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+
+    .preset-item {
+      background: rgba(30, 41, 59, 0.65);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      border-radius: 10px;
+      padding: 8px 10px;
+      text-align: left;
+      cursor: pointer;
+      transition: border-color 0.12s ease, background 0.12s ease;
+    }
+
+    .preset-item:hover, .preset-item.active {
+      border-color: var(--cyan);
+      background: rgba(56, 189, 248, 0.14);
+    }
+
+    .preset-title {
+      font-size: 12px;
+      font-weight: 800;
+      color: #fff;
+    }
+
+    .preset-desc {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--text-dim);
+      margin-top: 2px;
+    }
+
+    .custom-box {
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      border-radius: 12px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .form-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      font-size: 12px;
+    }
+
+    .form-row input[type="range"] {
+      flex: 1;
+      accent-color: var(--cyan);
+    }
+
+    .form-row select {
+      background: #1e293b;
+      color: #fff;
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      border-radius: 6px;
+      padding: 5px 8px;
+      font-size: 12px;
+    }
+
+    .btn-apply {
+      background: var(--emerald);
+      color: #030712;
+      border: none;
+      border-radius: 8px;
+      padding: 9px;
+      font-weight: 800;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    /* TOAST */
+    #toast {
+      position: fixed;
+      top: 54px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-12px);
+      background: rgba(15, 23, 42, 0.95);
+      border: 1px solid var(--cyan);
+      color: #fff;
+      padding: 6px 14px;
+      border-radius: 99px;
+      font-size: 11px;
+      font-weight: 700;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.2s ease;
+      z-index: 100;
+      white-space: nowrap;
+    }
+
+    #toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <!-- HEADER -->
+    <header class="header">
+      <div class="brand">
+        <span class="brand-title">PIXEL MOTOR</span>
+        <span id="fpsBadge" class="badge-fps">144 FPS</span>
+        <span class="badge-unlimited">NO TEMP LIMIT</span>
+      </div>
+      <div class="header-actions">
+        <button id="btnSoundMode" class="btn-icon active" title="Ganti Karakter Suara Knalpot">
+          🔊 <span id="soundProfileLabel">RACING</span>
+        </button>
+        <button id="btnMute" class="btn-icon active" title="Mute / Unmute Audio">
+          ON
+        </button>
+      </div>
+    </header>
+
+    <!-- ENGINE BAR -->
+    <div class="engine-bar">
+      <div class="engine-info">
+        <div id="activeEngineName" class="engine-name">V-Twin 90° L-Twin (2 Silinder)</div>
+        <div id="activeEngineSpecs" class="engine-sub">998cc • Firing: 1-2 (270°/450°) • Max 18,000 RPM</div>
+      </div>
+      <button id="btnOpenModal" class="btn-select-engine">⚙ PILIH MESIN (1-24)</button>
+    </div>
+
+    <!-- ENGINE CUTAWAY CANVAS -->
+    <div id="viewportWrapper" class="viewport-wrapper">
+      <canvas id="engineCanvas"></canvas>
+    </div>
+
+    <!-- CAMERA & SLOW-MO TOOLBAR -->
+    <div class="view-toolbar">
+      <div class="pill-group">
+        <button class="pill-btn active" data-cam="front">DEPAN (V/BOXER)</button>
+        <button class="pill-btn" data-cam="side">SAMPING (BARIS)</button>
+      </div>
+      <div class="pill-group">
+        <button class="pill-btn active" data-slow="1">1.0x</button>
+        <button class="pill-btn" data-slow="0.25">0.25x</button>
+        <button class="pill-btn" data-slow="0.08">0.08x</button>
+      </div>
+      <button id="btnTransMode" class="pill-btn active" style="background:rgba(56,189,248,0.18);color:#38bdf8;border:1px solid rgba(56,189,248,0.4);">
+        AUTO
+      </button>
+    </div>
+
+    <!-- TELEMETRY -->
+    <div class="telemetry-grid">
+      <div class="tele-card">
+        <span class="tele-label">PUTARAN</span>
+        <span id="teleRpm" class="tele-val cyan">0 RPM</span>
+      </div>
+      <div class="tele-card">
+        <span class="tele-label">LEDAKAN/DTK</span>
+        <span id="teleFires" class="tele-val amber">0 Hz</span>
+      </div>
+      <div class="tele-card">
+        <span class="tele-label">KECEPATAN</span>
+        <span id="teleSpeed" class="tele-val emerald">0 km/h</span>
+      </div>
+      <div class="tele-card">
+        <span class="tele-label">TRANSMISI</span>
+        <span id="teleGear" class="tele-val">N</span>
+      </div>
+    </div>
+
+    <!-- RPM BAR -->
+    <div class="rpm-bar-wrap">
+      <div class="rpm-track">
+        <div id="rpmFill" class="rpm-fill"></div>
+      </div>
+    </div>
+
+    <!-- BOTTOM CONTROL DECK -->
+    <div class="control-deck">
+      <button id="btnStart" class="btn-start">
+        <span style="font-size:18px;">⏻</span>
+        <span id="btnStartText">START</span>
+      </button>
+
+      <button id="btnGas" class="pedal-gas">
+        <span>GAS</span>
+        <span class="pedal-sub">[TAHAN / SPASI / ↑]</span>
+      </button>
+
+      <div class="shifter-col">
+        <div class="gear-row">
+          <button id="btnGearDown" class="btn-gear">-</button>
+          <button id="btnGearUp" class="btn-gear">+</button>
+        </div>
+        <button id="btnBrake" class="btn-brake">REM</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST -->
+  <div id="toast">Mesin dipilih</div>
+
+  <!-- MODAL SELECTOR -->
+  <div id="engineModal" class="modal-backdrop">
+    <div class="modal-card">
+      <div class="modal-header">
+        <span class="modal-title">PILIH KONFIGURASI MESIN (1 - 24 SILINDER)</span>
+        <button id="btnCloseModal" class="btn-close">TUTUP ✕</button>
+      </div>
+      <div class="modal-body">
+        <div>
+          <div class="section-label">Varian Twin & Silinder Kecil (1 - 4 Silinder)</div>
+          <div id="presetSmall" class="preset-grid"></div>
+        </div>
+        <div>
+          <div class="section-label">Sport, Supercar & Hypercar (5 - 16 Silinder)</div>
+          <div id="presetMid" class="preset-grid"></div>
+        </div>
+        <div>
+          <div class="section-label">Extreme Monster Engine (18 - 24 Silinder)</div>
+          <div id="presetMonster" class="preset-grid"></div>
+        </div>
+        <div>
+          <div class="section-label">Rakit Mesin Custom Sendiri (1 - 24 Silinder)</div>
+          <div class="custom-box">
+            <div class="form-row">
+              <span>Jumlah Silinder: <strong id="customCylLabel" style="color:var(--cyan);">12</strong></span>
+              <input id="customCylRange" type="range" min="1" max="24" value="12" />
+            </div>
+            <div class="form-row">
+              <span>Tipe Blok Mesin:</span>
+              <select id="customLayout">
+                <option value="v">V-Engine (Sudut V)</option>
+                <option value="inline">Inline (Segaris)</option>
+                <option value="boxer">Boxer / Flat (180°)</option>
+                <option value="w">W-Engine (3-Bank)</option>
+              </select>
+            </div>
+            <div class="form-row">
+              <span>Sudut Bank (°):</span>
+              <select id="customAngle">
+                <option value="45">45° (Harley / Narrow V)</option>
+                <option value="60">60° (V6 / V12 Sport)</option>
+                <option value="72">72° (V10 F1)</option>
+                <option value="90" selected>90° (Ducati L-Twin / V8)</option>
+                <option value="180">180° (Flat / Boxer)</option>
+              </select>
+            </div>
+            <button id="btnApplyCustom" class="btn-apply">PASANG MESIN CUSTOM</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (() => {
+      // ==========================================
+      // 1. DATABASE KONFIGURASI MESIN (1 - 24 SILINDER)
+      // ==========================================
+      const ENGINE_PRESETS = [
+        // SMALL & TWIN VARIANTS
+        {
+          id: 'single1',
+          group: 'small',
+          name: 'Single 1-Silinder 250cc',
+          desc: '1 Cyl • Inline 0° • Thumper',
+          cylinders: 1,
+          layout: 'inline',
+          bankAngle: 0,
+          crankType: 'even',
+          cc: 250,
+          maxRpm: 14500,
+          sound: 'racing'
+        },
+        {
+          id: 'vtwin90',
+          group: 'small',
+          name: 'V-Twin 90° L-Twin (Ducati)',
+          desc: '2 Cyl • V 90° • 270°/450° Pulse',
+          cylinders: 2,
+          layout: 'v',
+          bankAngle: 90,
+          crankType: 'ltwin90',
+          cc: 998,
+          maxRpm: 16500,
+          sound: 'racing'
+        },
+        {
+          id: 'vtwin45',
+          group: 'small',
+          name: 'V-Twin 45° Cruiser (Harley)',
+          desc: '2 Cyl • V 45° • Potato-Potato Lope',
+          cylinders: 2,
+          layout: 'v',
+          bankAngle: 45,
+          crankType: 'harley45',
+          cc: 1745,
+          maxRpm: 12000,
+          sound: 'muscle'
+        },
+        {
+          id: 'ptwin',
+          group: 'small',
+          name: 'Parallel Twin 270° (I-2)',
+          desc: '2 Cyl • Inline • Crossplane Twin',
+          cylinders: 2,
+          layout: 'inline',
+          bankAngle: 0,
+          crankType: 'ptwin270',
+          cc: 689,
+          maxRpm: 15500,
+          sound: 'racing'
+        },
+        {
+          id: 'boxer2',
+          group: 'small',
+          name: 'Boxer Twin 180° (Flat-2)',
+          desc: '2 Cyl • Flat 180° • BMW R-Series',
+          cylinders: 2,
+          layout: 'boxer',
+          bankAngle: 180,
+          crankType: 'even',
+          cc: 1254,
+          maxRpm: 14500,
+          sound: 'stock'
+        },
+        {
+          id: 'inline3',
+          group: 'small',
+          name: 'Inline-3 Triple 900cc',
+          desc: '3 Cyl • Inline • 120° Crank',
+          cylinders: 3,
+          layout: 'inline',
+          bankAngle: 0,
+          crankType: 'even',
+          cc: 890,
+          maxRpm: 16500,
+          sound: 'racing'
+        },
+        {
+          id: 'inline4',
+          group: 'small',
+          name: 'Inline-4 16V Screamer',
+          desc: '4 Cyl • Inline • 180° Flat-Plane',
+          cylinders: 4,
+          layout: 'inline',
+          bankAngle: 0,
+          crankType: 'even',
+          cc: 999,
+          maxRpm: 18000,
+          sound: 'f1'
+        },
+        {
+          id: 'v4',
+          group: 'small',
+          name: 'V4 90° MotoGP Desmo',
+          desc: '4 Cyl • V 90° • Big-Bang Pulse',
+          cylinders: 4,
+          layout: 'v',
+          bankAngle: 90,
+          crankType: 'even',
+          cc: 1000,
+          maxRpm: 18500,
+          sound: 'f1'
+        },
+
+        // MID & SUPERCAR (5 - 16 CYL)
+        {
+          id: 'inline5',
+          group: 'mid',
+          name: 'Inline-5 Turbo Rally',
+          desc: '5 Cyl • Inline • 1-2-4-5-3',
+          cylinders: 5,
+          layout: 'inline',
+          bankAngle: 0,
+          crankType: 'even',
+          cc: 2480,
+          maxRpm: 16000,
+          sound: 'racing'
+        },
+        {
+          id: 'inline6',
+          group: 'mid',
+          name: 'Inline-6 RB26 / 2JZ',
+          desc: '6 Cyl • Inline • 1-5-3-6-2-4',
+          cylinders: 6,
+          layout: 'inline',
+          bankAngle: 0,
+          crankType: 'even',
+          cc: 2997,
+          maxRpm: 17000,
+          sound: 'racing'
+        },
+        {
+          id: 'v6',
+          group: 'mid',
+          name: 'V6 60° Twin-Turbo GT-R',
+          desc: '6 Cyl • V 60° • 1-2-3-4-5-6',
+          cylinders: 6,
+          layout: 'v',
+          bankAngle: 60,
+          crankType: 'even',
+          cc: 3799,
+          maxRpm: 16500,
+          sound: 'racing'
+        },
+        {
+          id: 'flat6',
+          group: 'mid',
+          name: 'Flat-6 Boxer 180° GT3',
+          desc: '6 Cyl • Boxer 180° • 9,000+ Scream',
+          cylinders: 6,
+          layout: 'boxer',
+          bankAngle: 180,
+          crankType: 'even',
+          cc: 3996,
+          maxRpm: 18000,
+          sound: 'f1'
+        },
+        {
+          id: 'v8',
+          group: 'mid',
+          name: 'V8 90° Cross-Plane Muscle',
+          desc: '8 Cyl • V 90° • Deep Burble',
+          cylinders: 8,
+          layout: 'v',
+          bankAngle: 90,
+          crankType: 'even',
+          cc: 6162,
+          maxRpm: 15500,
+          sound: 'muscle'
+        },
+        {
+          id: 'v10',
+          group: 'mid',
+          name: 'V10 72° F1 / LFA Screamer',
+          desc: '10 Cyl • V 72° • High-Pitch Howl',
+          cylinders: 10,
+          layout: 'v',
+          bankAngle: 72,
+          crankType: 'even',
+          cc: 4805,
+          maxRpm: 18500,
+          sound: 'f1'
+        },
+        {
+          id: 'v12',
+          group: 'mid',
+          name: 'V12 60° Hypercar',
+          desc: '12 Cyl • V 60° • Smooth Symphony',
+          cylinders: 12,
+          layout: 'v',
+          bankAngle: 60,
+          crankType: 'even',
+          cc: 6498,
+          maxRpm: 18000,
+          sound: 'f1'
+        },
+        {
+          id: 'w16',
+          group: 'mid',
+          name: 'W16 Quad-Turbo 8.0L',
+          desc: '16 Cyl • W-Bank • 4-Bank Beast',
+          cylinders: 16,
+          layout: 'w',
+          bankAngle: 90,
+          crankType: 'even',
+          cc: 7993,
+          maxRpm: 16500,
+          sound: 'muscle'
+        },
+
+        // MONSTER ENGINES (18 - 24 CYL)
+        {
+          id: 'v18',
+          group: 'monster',
+          name: 'V18 Heavy Marine / Hyper',
+          desc: '18 Cyl • V 60° • Massive Torque',
+          cylinders: 18,
+          layout: 'v',
+          bankAngle: 60,
+          crankType: 'even',
+          cc: 12000,
+          maxRpm: 15000,
+          sound: 'muscle'
+        },
+        {
+          id: 'v20',
+          group: 'monster',
+          name: 'V20 Twin-V10 Tandem',
+          desc: '20 Cyl • V 72° • Dual V10 Bank',
+          cylinders: 20,
+          layout: 'v',
+          bankAngle: 72,
+          crankType: 'even',
+          cc: 14500,
+          maxRpm: 16000,
+          sound: 'f1'
+        },
+        {
+          id: 'w24',
+          group: 'monster',
+          name: 'W24 Triple-Bank Leviathan',
+          desc: '24 Cyl • W-Bank • 3x8 Cylinder',
+          cylinders: 24,
+          layout: 'w',
+          bankAngle: 80,
+          crankType: 'even',
+          cc: 18000,
+          maxRpm: 15500,
+          sound: 'muscle'
+        },
+        {
+          id: 'v24',
+          group: 'monster',
+          name: 'V24 Extreme Overclocked',
+          desc: '24 Cyl • V 60° • 18,000 RPM Limitless',
+          cylinders: 24,
+          layout: 'v',
+          bankAngle: 60,
+          crankType: 'even',
+          cc: 24000,
+          maxRpm: 18000,
+          sound: 'f1'
+        }
+      ];
+
+      // ==========================================
+      // 2. STATE SIMULASI (TANPA BATAS SUHU / KERUSAKAN)
+      // ==========================================
+      const state = {
+        engine: null,
+        running: false,
+        cranking: false,
+        crankTimer: 0,
+        rpm: 0,
+        throttle: 0,
+        prevThrottle: 0,
+        brake: false,
+        crankAngle: 0, // Radian
+        cameraView: 'front', // 'front' | 'side'
+        slowMo: 1.0,
+        transMode: 'AUTO', // 'AUTO' | 'MANUAL'
+        gear: 0, // 0 = N, 1..6 = Gigi
+        speedKmh: 0,
+        roadOffset: 0,
+        soundProfile: 'racing', // 'stock' | 'racing' | 'f1' | 'muscle'
+        muted: false,
+        fps: 144,
+        cylinderPhases: [], // Sudut penyalaan tiap silinder (0..4PI)
+        cylinderAngles: [], // Sudut kemiringan bank tiap silinder (rad)
+        firingOrderText: ''
+      };
+
+      const GEAR_RATIOS = [0, 3.6, 2.35, 1.72, 1.34, 1.06, 0.86];
+      const SOUND_PROFILES = ['stock', 'racing', 'f1', 'muscle'];
+
+      // ==========================================
+      // 3. SETUP KINEMATIKA SILINDER & FIRING ORDER
+      // ==========================================
+      function configureEngine(cfg) {
+        state.engine = { ...cfg };
+        const N = cfg.cylinders;
+        const angles = [];
+        const phases = [];
+
+        // Tentukan sudut kemiringan fisik tiap silinder (radian)
+        const halfRad = ((cfg.bankAngle || 0) * Math.PI) / 180 / 2;
+        for (let i = 0; i < N; i++) {
+          if (cfg.layout === 'inline') {
+            angles.push(0);
+          } else if (cfg.layout === 'v' || cfg.layout === 'boxer') {
+            angles.push(i % 2 === 0 ? -halfRad : halfRad);
+          } else if (cfg.layout === 'w') {
+            const bankIdx = i % 3; // 0: Kiri, 1: Tengah, 2: Kanan
+            angles.push(bankIdx === 0 ? -halfRad : bankIdx === 1 ? 0 : halfRad);
+          } else {
+            angles.push(0);
+          }
+        }
+
+        // Tentukan fase penyalaan 4-tak (0 .. 4*PI)
+        const TWO_PI = Math.PI * 2;
+        const FOUR_PI = Math.PI * 4;
+
+        if (N === 2 && cfg.crankType === 'harley45') {
+          // V-Twin 45° single crankpin: 315° lalu 405° (suara khas potato-potato)
+          phases.push(0);
+          phases.push((315 * Math.PI) / 180);
+        } else if (N === 2 && cfg.crankType === 'ltwin90') {
+          // Ducati L-Twin 90° single crankpin: 270° lalu 450°
+          phases.push(0);
+          phases.push((270 * Math.PI) / 180);
+        } else if (N === 2 && cfg.crankType === 'ptwin270') {
+          // Parallel Twin 270° crank
+          phases.push(0);
+          phases.push((270 * Math.PI) / 180);
+        } else {
+          // Distribusi firing order merata di siklus 720° (4*PI)
+          const step = FOUR_PI / N;
+          // Susun urutan penyalaan bergantian antar bank agar seimbang
+          const order = [];
+          const visited = new Array(N).fill(false);
+          let idx = 0;
+          const jump = N <= 2 ? 1 : N % 2 === 0 ? Math.max(1, Math.floor(N / 2) - 1) : 2;
+          for (let count = 0; count < N; count++) {
+            while (visited[idx]) {
+              idx = (idx + 1) % N;
+            }
+            visited[idx] = true;
+            order.push(idx);
+            idx = (idx + jump) % N;
+          }
+
+          for (let i = 0; i < N; i++) phases.push(0);
+          order.forEach((cylIdx, seqIdx) => {
+            phases[cylIdx] = (seqIdx * step) % FOUR_PI;
+          });
+        }
+
+        state.cylinderAngles = angles;
+        state.cylinderPhases = phases;
+
+        // Buat teks urutan pengapian
+        const sortedOrder = phases
+          .map((ph, idx) => ({ cyl: idx + 1, ph }))
+          .sort((a, b) => a.ph - b.ph)
+          .map((item) => item.cyl);
+        const orderPreview =
+          sortedOrder.length > 8
+            ? sortedOrder.slice(0, 8).join('-') + '...'
+            : sortedOrder.join('-');
+
+        document.getElementById('activeEngineName').textContent = `${cfg.name} (${N} Silinder)`;
+        document.getElementById('activeEngineSpecs').textContent =
+          `${cfg.cc}cc • Firing: ${orderPreview} • Unlimited ${cfg.maxRpm.toLocaleString()} RPM`;
+
+        if (cfg.sound) {
+          state.soundProfile = cfg.sound;
+          document.getElementById('soundProfileLabel').textContent = cfg.sound.toUpperCase();
+        }
+      }
+
+      // ==========================================
+      // 4. WEB AUDIO API ACOUSTIC EXHAUST SYNTHESIZER
+      // ==========================================
+      let audioCtx = null;
+      let scriptNode = null;
+      let masterGain = null;
+      let lowpassFilter = null;
+      let waveshaper = null;
+      let audioPhases = [];
+      let audioEnvelopes = [];
+      let backfireEnv = 0;
+      let noiseSeed = 12345;
+
+      function fastNoise() {
+        noiseSeed = (noiseSeed * 16807) % 2147483647;
+        return (noiseSeed / 1073741823.5) - 1.0;
+      }
+
+      function makeDistortionCurve(amount) {
+        const k = amount;
+        const n = 44100;
+        const curve = new Float32Array(n);
+        for (let i = 0; i < n; i++) {
+          const x = (i * 2) / n - 1;
+          curve[i] = ((3 + k) * x * 20 * (Math.PI / 180)) / (Math.PI + k * Math.abs(x));
+        }
+        return curve;
+      }
+
+      function initAudio() {
+        if (audioCtx) {
+          if (audioCtx.state === 'suspended') audioCtx.resume();
+          return;
+        }
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContextClass) return;
+
+        audioCtx = new AudioContextClass();
+        const sampleRate = audioCtx.sampleRate;
+        const bufferSize = 1024;
+
+        scriptNode = audioCtx.createScriptProcessor(bufferSize, 0, 1);
+        waveshaper = audioCtx.createWaveShaper();
+        waveshaper.curve = makeDistortionCurve(38);
+        waveshaper.oversample = '2x';
+
+        lowpassFilter = audioCtx.createBiquadFilter();
+        lowpassFilter.type = 'lowpass';
+        lowpassFilter.frequency.value = 950;
+        lowpassFilter.Q.value = 2.4;
+
+        masterGain = audioCtx.createGain();
+        masterGain.gain.value = state.muted ? 0 : 0.42;
+
+        scriptNode.onaudioprocess = (e) => {
+          const out = e.outputBuffer.getChannelData(0);
+          const N = state.engine ? state.engine.cylinders : 2;
+
+          if (audioPhases.length !== N) {
+            audioPhases = new Array(N).fill(0);
+            audioEnvelopes = new Array(N).fill(0);
+          }
+
+          if ((!state.running && !state.cranking) || state.rpm < 60) {
+            for (let i = 0; i < out.length; i++) out[i] = 0;
+            return;
+          }
+
+          // Karakter suara berdasarkan profil knalpot
+          let baseFreq = 95;
+          let decayRate = 0.0038;
+          let harmonicMix = 0.45;
+          let filterCutoff = 850 + (state.rpm / 18000) * 2600 + state.throttle * 900;
+
+          if (state.soundProfile === 'muscle') {
+            baseFreq = 62;
+            decayRate = 0.0029;
+            harmonicMix = 0.65;
+            filterCutoff *= 0.78;
+          } else if (state.soundProfile === 'f1') {
+            baseFreq = 148;
+            decayRate = 0.0055;
+            harmonicMix = 0.35;
+            filterCutoff *= 1.35;
+          } else if (state.soundProfile === 'stock') {
+            baseFreq = 82;
+            decayRate = 0.0044;
+            harmonicMix = 0.25;
+            filterCutoff *= 0.68;
+          }
+
+          lowpassFilter.frequency.setTargetAtTime(Math.min(filterCutoff, 6800), audioCtx.currentTime, 0.02);
+
+          // Kecepatan siklus 4-tak per sampel (720 derajat = 1 siklus penuh tiap silinder)
+          const cyclesPerSec = state.rpm / 120; // 2 putaran crank = 1 siklus 4-tak
+          const cycleInc = cyclesPerSec / sampleRate;
+          const FOUR_PI = Math.PI * 4;
+          const loadGain = 0.45 + state.throttle * 0.55;
+          const normScale = 1 / Math.sqrt(Math.max(1, N * 0.55));
+
+          for (let s = 0; s < out.length; s++) {
+            let sample = 0;
+
+            for (let c = 0; c < N; c++) {
+              const targetOffset = (state.cylinderPhases[c] || 0) / FOUR_PI;
+              const prevPh = audioPhases[c];
+              let curPh = prevPh + cycleInc;
+              if (curPh >= 1.0) curPh -= 1.0;
+              audioPhases[c] = curPh;
+
+              // Deteksi momen busi memercik
+              const fired =
+                (prevPh < targetOffset && curPh >= targetOffset) ||
+                (prevPh > curPh && (targetOffset >= prevPh || targetOffset <= curPh));
+
+              if (fired) {
+                // Sedikit variasi alami tiap silinder agar terdengar organik
+                audioEnvelopes[c] = 0.88 + (c % 3) * 0.06;
+              }
+
+              const env = audioEnvelopes[c];
+              if (env > 0.001) {
+                const pitch = baseFreq * (1 + (state.rpm / 16000) * 1.15) * (1 + env * 0.32);
+                const wave1 = Math.sin(env * 34 * (pitch / 90));
+                const wave2 = Math.sin(env * 68 * (pitch / 90)) * harmonicMix;
+                const exhaustGrit = fastNoise() * 0.22 * env * loadGain;
+
+                sample += (wave1 + wave2 + exhaustGrit) * env;
+                audioEnvelopes[c] *= 1 - decayRate;
+              }
+            }
+
+            // Backfire / Knalpot Nembak saat lepas gas di RPM tinggi
+            if (backfireEnv > 0.002) {
+              sample += fastNoise() * backfireEnv * 1.45;
+              backfireEnv *= 0.9965;
+            }
+
+            // Suara dinamo starter saat cranking
+            if (state.cranking) {
+              const starterTone = Math.sin((s / sampleRate) * Math.PI * 2 * 135) * 0.25;
+              sample += starterTone;
+            }
+
+            out[s] = Math.max(-0.95, Math.min(0.95, sample * normScale * loadGain));
+          }
+        };
+
+        scriptNode.connect(waveshaper);
+        waveshaper.connect(lowpassFilter);
+        lowpassFilter.connect(masterGain);
+        masterGain.connect(audioCtx.destination);
+      }
+
+      function triggerBackfire() {
+        backfireEnv = 0.85;
+      }
+
+      // ==========================================
+      // 5. CANVAS 144Hz OVERCLOCKED RENDERER
+      // ==========================================
+      const canvas = document.getElementById('engineCanvas');
+      const ctx = canvas.getContext('2d', { alpha: false, desynchronized: true });
+      const wrapper = document.getElementById('viewportWrapper');
+
+      let viewW = 360;
+      let viewH = 360;
+      let dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+      const resizeObserver = new ResizeObserver((entries) => {
+        for (const entry of entries) {
+          const rect = entry.contentRect;
+          if (rect.width > 0 && rect.height > 0) {
+            viewW = rect.width;
+            viewH = rect.height;
+            dpr = Math.min(window.devicePixelRatio || 1, 2);
+            canvas.width = Math.floor(viewW * dpr);
+            canvas.height = Math.floor(viewH * dpr);
+          }
+        }
+      });
+      resizeObserver.observe(wrapper);
+
+      // Gambar satu unit silinder presisi (Slider-Crank Kinematics)
+      function drawCylinderAssembly(cx, cy, bankAngleRad, cylPhaseRad, crankR, conrodL, boreW, strokeH, isGhost) {
+        const TWO_PI = Math.PI * 2;
+        const FOUR_PI = Math.PI * 4;
+        const normPhase = ((cylPhaseRad % FOUR_PI) + FOUR_PI) % FOUR_PI;
+
+        // Sudut crank pin relatif terhadap sumbu silinder (0 = TDC)
+        const relCrank = normPhase;
+        const globalCrank = relCrank + bankAngleRad;
+
+        // Posisi crank pin
+        const pinX = cx + crankR * Math.sin(globalCrank);
+        const pinY = cy - crankR * Math.cos(globalCrank);
+
+        // Jarak wrist pin piston dari pusat kruk as sepanjang sumbu silinder
+        const sinRel = Math.sin(relCrank);
+        const cosRel = Math.cos(relCrank);
+        const underRoot = Math.max(0, conrodL * conrodL - (crankR * sinRel) * (crankR * sinRel));
+        const dPiston = crankR * cosRel + Math.sqrt(underRoot);
+
+        const sinA = Math.sin(bankAngleRad);
+        const cosA = Math.cos(bankAngleRad);
+        const wristX = cx + dPiston * sinA;
+        const wristY = cy - dPiston * cosA;
+
+        ctx.save();
+        if (isGhost) ctx.globalAlpha = 0.25;
+
+        // 1. Dinding Liner Silinder & Ruang Bakar
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate(bankAngleRad);
+
+        const linerBottom = -(conrodL - crankR + 6);
+        const linerTop = -(conrodL + crankR + boreW * 0.55);
+        const linerH = linerBottom - linerTop;
+
+        // Ruang bakar (warna sesuai langkah 4-tak)
+        let chamberColor = '#0f172a';
+        let strokeLabel = '';
+        if (normPhase < Math.PI) {
+          // Power / Ledakan
+          const flash = Math.max(0, 1 - normPhase / 0.55);
+          chamberColor = flash > 0.05 ? `rgba(251, 146, 60, ${0.25 + flash * 0.75})` : 'rgba(244, 63, 94, 0.16)';
+          strokeLabel = 'LEDAKAN';
+        } else if (normPhase < TWO_PI) {
+          // Exhaust / Buang
+          chamberColor = 'rgba(148, 163, 184, 0.16)';
+          strokeLabel = 'BUANG';
+        } else if (normPhase < Math.PI * 3) {
+          // Intake / Hisap
+          chamberColor = 'rgba(56, 189, 248, 0.18)';
+          strokeLabel = 'HISAP';
+        } else {
+          // Compression / Kompresi
+          chamberColor = 'rgba(245, 158, 11, 0.16)';
+          strokeLabel = 'KOMPRESI';
+        }
+
+        ctx.fillStyle = chamberColor;
+        ctx.fillRect(-boreW * 0.5, linerTop, boreW, linerH);
+
+        // Dinding blok silinder
+        ctx.strokeStyle = '#334155';
+        ctx.lineWidth = 2.5;
+        ctx.strokeRect(-boreW * 0.5, linerTop, boreW, linerH);
+
+        // Kepala silinder (Cylinder Head)
+        const headH = Math.max(14, boreW * 0.34);
+        ctx.fillStyle = '#1e293b';
+        ctx.fillRect(-boreW * 0.56, linerTop - headH, boreW * 1.12, headH);
+        ctx.strokeStyle = '#475569';
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(-boreW * 0.56, linerTop - headH, boreW * 1.12, headH);
+
+        // Klep Intake (Biru Cyan) & Exhaust (Merah)
+        let intakeLift = 0;
+        let exhaustLift = 0;
+        if (normPhase >= TWO_PI && normPhase < Math.PI * 3) {
+          intakeLift = Math.sin(normPhase - TWO_PI) * (headH * 0.42);
+        }
+        if (normPhase >= Math.PI && normPhase < TWO_PI) {
+          exhaustLift = Math.sin(normPhase - Math.PI) * (headH * 0.42);
+        }
+
+        // Batang & Payung Klep Intake (Kiri)
+        const vOffset = boreW * 0.24;
+        const vHeadW = boreW * 0.26;
+        ctx.strokeStyle = '#38bdf8';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(-vOffset, linerTop - headH + 2 + intakeLift);
+        ctx.lineTo(-vOffset, linerTop + intakeLift);
+        ctx.moveTo(-vOffset - vHeadW * 0.5, linerTop + intakeLift);
+        ctx.lineTo(-vOffset + vHeadW * 0.5, linerTop + intakeLift);
+        ctx.stroke();
+
+        // Batang & Payung Klep Exhaust (Kanan)
+        ctx.strokeStyle = '#f43f5e';
+        ctx.beginPath();
+        ctx.moveTo(vOffset, linerTop - headH + 2 + exhaustLift);
+        ctx.lineTo(vOffset, linerTop + exhaustLift);
+        ctx.moveTo(vOffset - vHeadW * 0.5, linerTop + exhaustLift);
+        ctx.lineTo(vOffset + vHeadW * 0.5, linerTop + exhaustLift);
+        ctx.stroke();
+
+        // Busi & Percikan Api di Tengah
+        ctx.fillStyle = '#e2e8f0';
+        ctx.fillRect(-2, linerTop - headH - 3, 4, headH + 4);
+        if (normPhase < 0.35 && state.running) {
+          ctx.fillStyle = '#fef08a';
+          ctx.beginPath();
+          ctx.arc(0, linerTop + 5, boreW * 0.24, 0, TWO_PI);
+          ctx.fill();
+        }
+
+        // Piston (bergerak pada koordinat lokal -dPiston)
+        const pistonH = boreW * 0.52;
+        const pistonY = -dPiston - pistonH * 0.35;
+        ctx.fillStyle = '#cbd5e1';
+        ctx.fillRect(-boreW * 0.47, pistonY, boreW * 0.94, pistonH);
+
+        // Ring Piston
+        ctx.fillStyle = '#475569';
+        ctx.fillRect(-boreW * 0.47, pistonY + 3, boreW * 0.94, 2);
+        ctx.fillRect(-boreW * 0.47, pistonY + 7, boreW * 0.94, 2);
+
+        // Label langkah jika tidak ghost & ukuran cukup
+        if (!isGhost && boreW >= 24) {
+          ctx.fillStyle = '#94a3b8';
+          ctx.font = 'bold 8px monospace';
+          ctx.textAlign = 'center';
+          ctx.fillText(strokeLabel, 0, linerTop - headH - 6);
+        }
+
+        ctx.restore();
+
+        // 2. Stang Seher (Connecting Rod) dari Crank Pin ke Wrist Pin
+        ctx.strokeStyle = '#94a3b8';
+        ctx.lineWidth = Math.max(3, boreW * 0.14);
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(pinX, pinY);
+        ctx.lineTo(wristX, wristY);
+        ctx.stroke();
+
+        // 3. Crank Web (Pipi Kruk As)
+        ctx.strokeStyle = '#64748b';
+        ctx.lineWidth = Math.max(4, boreW * 0.22);
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(pinX, pinY);
+        ctx.stroke();
+
+        // Pin & Bearing
+        ctx.fillStyle = '#38bdf8';
+        ctx.beginPath();
+        ctx.arc(wristX, wristY, Math.max(2.5, boreW * 0.09), 0, TWO_PI);
+        ctx.fill();
+
+        ctx.fillStyle = '#f59e0b';
+        ctx.beginPath();
+        ctx.arc(pinX, pinY, Math.max(3, boreW * 0.11), 0, TWO_PI);
+        ctx.fill();
+
+        ctx.restore();
+      }
+
+      function renderFrontView() {
+        const cfg = state.engine;
+        const N = cfg.cylinders;
+        const cx = viewW * 0.5;
+        const isBoxer = cfg.layout === 'boxer' || cfg.bankAngle >= 170;
+        const cy = isBoxer ? viewH * 0.54 : viewH * 0.72;
+
+        // Skala dinamis agar pas untuk V-Twin, Inline, Boxer, maupun V24
+        const maxRadius = Math.min(viewW * 0.42, isBoxer ? viewH * 0.42 : viewH * 0.58);
+        const crankR = Math.max(16, maxRadius * 0.22);
+        const conrodL = crankR * 2.35;
+        const boreW = Math.max(26, Math.min(54, crankR * 1.45));
+
+        // Gambar silinder belakang sebagai bayangan mekanis (maks 6 layer agar tetap 144 FPS)
+        const maxLayers = Math.min(N, 6);
+        for (let i = maxLayers - 1; i >= 0; i--) {
+          const isGhost = i >= (cfg.layout === 'inline' ? 1 : cfg.layout === 'w' ? 3 : 2);
+          const phase = state.crankAngle - state.cylinderPhases[i];
+          drawCylinderAssembly(cx, cy, state.cylinderAngles[i], phase, crankR, conrodL, boreW, 0, isGhost);
+        }
+
+        // Poros Kruk As Utama
+        ctx.fillStyle = '#0f172a';
+        ctx.strokeStyle = '#38bdf8';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.arc(cx, cy, crankR * 0.42, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+      }
+
+      function renderSideView() {
+        const cfg = state.engine;
+        const N = cfg.cylinders;
+        const padX = 20;
+        const usableW = viewW - padX * 2;
+        const slotW = usableW / N;
+        const boreW = Math.max(10, Math.min(46, slotW * 0.76));
+        const crankR = Math.max(12, Math.min(viewH * 0.13, boreW * 0.75));
+        const conrodL = crankR * 2.3;
+        const cy = viewH * 0.72;
+
+        // Poros Kruk As Horizontal
+        ctx.strokeStyle = '#334155';
+        ctx.lineWidth = Math.max(3, crankR * 0.3);
+        ctx.beginPath();
+        ctx.moveTo(padX, cy);
+        ctx.lineTo(viewW - padX, cy);
+        ctx.stroke();
+
+        for (let i = 0; i < N; i++) {
+          const cx = padX + slotW * (i + 0.5);
+          const phase = state.crankAngle - state.cylinderPhases[i];
+          drawCylinderAssembly(cx, cy, 0, phase, crankR, conrodL, boreW, 0, false);
+
+          // Nomor silinder di bawah kruk as
+          if (N <= 16 || i % 2 === 0) {
+            ctx.fillStyle = '#64748b';
+            ctx.font = 'bold 9px monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText(`#${i + 1}`, cx, cy + crankR + 14);
+          }
+        }
+      }
+
+      function renderBackgroundRoad() {
+        // Grid teknis halus
+        ctx.fillStyle = '#060a12';
+        ctx.fillRect(0, 0, viewW, viewH);
+
+        ctx.strokeStyle = 'rgba(56, 189, 248, 0.05)';
+        ctx.lineWidth = 1;
+        const step = 28;
+        ctx.beginPath();
+        for (let x = 0; x < viewW; x += step) {
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x, viewH);
+        }
+        for (let y = 0; y < viewH; y += step) {
+          ctx.moveTo(0, y);
+          ctx.lineTo(viewW, y);
+        }
+        ctx.stroke();
+
+        // Aspal Mini di bagian paling bawah canvas
+        const roadY = viewH - 18;
+        ctx.fillStyle = '#0f172a';
+        ctx.fillRect(0, roadY, viewW, 18);
+        ctx.strokeStyle = 'rgba(56, 189, 248, 0.35)';
+        ctx.beginPath();
+        ctx.moveTo(0, roadY);
+        ctx.lineTo(viewW, roadY);
+        ctx.stroke();
+
+        // Marka jalan bergerak sesuai kecepatan
+        ctx.fillStyle = '#f59e0b';
+        const dashW = 24;
+        const gap = 36;
+        const total = dashW + gap;
+        const offset = state.roadOffset % total;
+        for (let x = -offset; x < viewW; x += total) {
+          ctx.fillRect(x, roadY + 7, dashW, 3);
+        }
+      }
+
+      // ==========================================
+      // 6. PHYSICS & 144Hz MAIN LOOP
+      // ==========================================
+      let lastFrameTime = performance.now();
+      let fpsFrameCount = 0;
+      let fpsLastCheck = lastFrameTime;
+      let uiLastUpdate = 0;
+
+      function stepPhysics(dt) {
+        const cfg = state.engine;
+        const idleRpm = cfg.cylinders <= 2 ? 1150 : 950;
+        const maxRpm = cfg.maxRpm;
+
+        // Starter motor cranking
+        if (state.cranking) {
+          state.crankTimer -= dt;
+          state.rpm += (420 - state.rpm) * Math.min(1, dt * 12);
+          if (state.crankTimer <= 0) {
+            state.cranking = false;
+            state.running = true;
+            state.rpm = idleRpm + 350;
+            showToast('MESIN MENYALA!');
+          }
+        } else if (state.running) {
+          // Respons RPM cepat & bebas limit suhu
+          const targetRpm = idleRpm + state.throttle * (maxRpm - idleRpm);
+          const accelRate = state.throttle > 0.05 ? 7.5 : 4.2;
+          state.rpm += (targetRpm - state.rpm) * Math.min(1, dt * accelRate);
+
+          // Efek rev-limiter lembut di puncak RPM
+          if (state.rpm > maxRpm - 180 && state.throttle > 0.9) {
+            state.rpm -= Math.random() * 260;
+          }
+        } else {
+          // Mesin mati: melambat hingga berhenti
+          state.rpm *= Math.pow(0.08, dt);
+          if (state.rpm < 5) state.rpm = 0;
+        }
+
+        // Deteksi lepas gas mendadak untuk efek backfire
+        if (state.running && state.prevThrottle - state.throttle > 0.25 && state.rpm > 4200) {
+          triggerBackfire();
+        }
+        state.prevThrottle = state.throttle;
+
+        // Sub-stepping rotasi kruk as agar presisi di 18,000 RPM & 144Hz
+        const subSteps = 4;
+        const subDt = (dt * state.slowMo) / subSteps;
+        const radPerSec = (state.rpm / 60) * Math.PI * 2;
+        const FOUR_PI = Math.PI * 4;
+
+        for (let s = 0; s < subSteps; s++) {
+          state.crankAngle = (state.crankAngle + radPerSec * subDt) % FOUR_PI;
+        }
+
+        // Transmisi & Kecepatan Kendaraan
+        if (state.transMode === 'AUTO' && state.running) {
+          if (state.gear === 0 && state.throttle > 0.1 && !state.brake) {
+            state.gear = 1;
+          } else if (state.gear > 0) {
+            if (state.rpm > maxRpm * 0.84 && state.gear < 6 && state.throttle > 0.4) {
+              state.gear++;
+              state.rpm *= 0.68;
+            } else if (state.rpm < 2400 && state.gear > 1) {
+              state.gear--;
+              state.rpm *= 1.32;
+            }
+          }
+        }
+
+        if (state.gear > 0 && state.running) {
+          const ratio = GEAR_RATIOS[state.gear];
+          const targetSpeed = (state.rpm / ratio) * 0.052;
+          state.speedKmh += (targetSpeed - state.speedKmh) * Math.min(1, dt * 3.5);
+        } else {
+          state.speedKmh *= Math.pow(0.35, dt);
+        }
+
+        if (state.brake) {
+          state.speedKmh *= Math.pow(0.05, dt);
+          if (state.gear > 0 && state.running && state.speedKmh < 8) {
+            state.rpm = Math.max(idleRpm, state.rpm * 0.92);
+          }
+        }
+
+        if (state.speedKmh < 0.2) state.speedKmh = 0;
+        state.roadOffset += state.speedKmh * dt * 8.5;
+      }
+
+      function updateTelemetryDOM(now) {
+        if (now - uiLastUpdate < 50) return; // 20Hz DOM update agar nol lag
+        uiLastUpdate = now;
+
+        const rpmInt = Math.round(state.rpm);
+        const firesPerSec = Math.round((state.rpm / 60) * (state.engine.cylinders / 2));
+        const speedInt = Math.round(state.speedKmh);
+        const pct = Math.min(100, (state.rpm / state.engine.maxRpm) * 100);
+
+        document.getElementById('teleRpm').textContent = `${rpmInt.toLocaleString()} RPM`;
+        document.getElementById('teleFires').textContent = `${firesPerSec} /dtk`;
+        document.getElementById('teleSpeed').textContent = `${speedInt} km/h`;
+        document.getElementById('teleGear').textContent = state.gear === 0 ? 'N' : `G-${state.gear}`;
+        document.getElementById('rpmFill').style.width = `${pct}%`;
+      }
+
+      function mainLoop(now) {
+        const rawDt = (now - lastFrameTime) / 1000;
+        lastFrameTime = now;
+        const dt = Math.min(rawDt, 0.05);
+
+        // Hitung FPS real-time
+        fpsFrameCount++;
+        if (now - fpsLastCheck >= 500) {
+          state.fps = Math.round((fpsFrameCount * 1000) / (now - fpsLastCheck));
+          document.getElementById('fpsBadge').textContent = `${state.fps} FPS`;
+          fpsFrameCount = 0;
+          fpsLastCheck = now;
+        }
+
+        stepPhysics(dt);
+
+        // Render 144Hz Canvas
+        ctx.save();
+        ctx.scale(dpr, dpr);
+        renderBackgroundRoad();
+        if (state.cameraView === 'front') {
+          renderFrontView();
+        } else {
+          renderSideView();
+        }
+        ctx.restore();
+
+        updateTelemetryDOM(now);
+        requestAnimationFrame(mainLoop);
+      }
+
+      // ==========================================
+      // 7. EVENT LISTENERS & UI INTERACTION
+      // ==========================================
+      function showToast(msg) {
+        const el = document.getElementById('toast');
+        el.textContent = msg;
+        el.classList.add('show');
+        clearTimeout(el._t);
+        el._t = setTimeout(() => el.classList.remove('show'), 1800);
+      }
+
+      // Tombol Start / Stop
+      const btnStart = document.getElementById('btnStart');
+      const btnStartText = document.getElementById('btnStartText');
+      btnStart.addEventListener('click', () => {
+        initAudio();
+        if (!state.running && !state.cranking) {
+          state.cranking = true;
+          state.crankTimer = 0.45;
+          btnStart.classList.add('running');
+          btnStartText.textContent = 'MATIKAN';
+          showToast('Menyalakan starter...');
+        } else {
+          state.running = false;
+          state.cranking = false;
+          state.gear = 0;
+          btnStart.classList.remove('running');
+          btnStartText.textContent = 'START';
+          showToast('Mesin dimatikan');
+        }
+      });
+
+      // Pedal GAS (Touch, Mouse, Keyboard)
+      const btnGas = document.getElementById('btnGas');
+      const setGas = (pressed) => {
+        initAudio();
+        state.throttle = pressed ? 1.0 : 0.0;
+        btnGas.classList.toggle('pressed', pressed);
+      };
+      btnGas.addEventListener('pointerdown', (e) => { e.preventDefault(); setGas(true); });
+      window.addEventListener('pointerup', () => {
+        if (state.throttle > 0) setGas(false);
+        if (state.brake) setBrake(false);
+      });
+
+      // Pedal REM
+      const btnBrake = document.getElementById('btnBrake');
+      const setBrake = (pressed) => {
+        state.brake = pressed;
+        btnBrake.classList.toggle('pressed', pressed);
+      };
+      btnBrake.addEventListener('pointerdown', (e) => { e.preventDefault(); setBrake(true); });
+
+      // Keyboard Support
+      window.addEventListener('keydown', (e) => {
+        if (e.code === 'Space' || e.code === 'ArrowUp') {
+          e.preventDefault();
+          if (state.throttle === 0) setGas(true);
+        } else if (e.code === 'ArrowDown') {
+          e.preventDefault();
+          setBrake(true);
+        }
+      });
+      window.addEventListener('keyup', (e) => {
+        if (e.code === 'Space' || e.code === 'ArrowUp') setGas(false);
+        if (e.code === 'ArrowDown') setBrake(false);
+      });
+
+      // Shifter Gigi
+      document.getElementById('btnGearUp').addEventListener('click', () => {
+        if (state.gear < 6) {
+          state.gear++;
+          if (state.running && state.gear > 1) state.rpm *= 0.72;
+          showToast(`Gigi ${state.gear}`);
+        }
+      });
+      document.getElementById('btnGearDown').addEventListener('click', () => {
+        if (state.gear > 0) {
+          state.gear--;
+          if (state.running && state.gear > 0) state.rpm = Math.min(state.engine.maxRpm, state.rpm * 1.28);
+          showToast(state.gear === 0 ? 'Netral (N)' : `Gigi ${state.gear}`);
+        }
+      });
+
+      // Mode Transmisi AUTO / MANUAL
+      const btnTransMode = document.getElementById('btnTransMode');
+      btnTransMode.addEventListener('click', () => {
+        state.transMode = state.transMode === 'AUTO' ? 'MANUAL' : 'AUTO';
+        btnTransMode.textContent = state.transMode;
+        showToast(`Transmisi: ${state.transMode}`);
+      });
+
+      // Kamera DEPAN / SAMPING
+      document.querySelectorAll('[data-cam]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('[data-cam]').forEach((b) => b.classList.remove('active'));
+          btn.classList.add('active');
+          state.cameraView = btn.dataset.cam;
+        });
+      });
+
+      // Slow-Mo
+      document.querySelectorAll('[data-slow]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('[data-slow]').forEach((b) => b.classList.remove('active'));
+          btn.classList.add('active');
+          state.slowMo = parseFloat(btn.dataset.slow);
+        });
+      });
+
+      // Sound Profile & Mute
+      document.getElementById('btnSoundMode').addEventListener('click', () => {
+        initAudio();
+        const idx = (SOUND_PROFILES.indexOf(state.soundProfile) + 1) % SOUND_PROFILES.length;
+        state.soundProfile = SOUND_PROFILES[idx];
+        document.getElementById('soundProfileLabel').textContent = state.soundProfile.toUpperCase();
+        showToast(`Karakter Suara: ${state.soundProfile.toUpperCase()}`);
+      });
+
+      const btnMute = document.getElementById('btnMute');
+      btnMute.addEventListener('click', () => {
+        initAudio();
+        state.muted = !state.muted;
+        if (masterGain) masterGain.gain.value = state.muted ? 0 : 0.42;
+        btnMute.textContent = state.muted ? 'MUTE' : 'ON';
+        btnMute.classList.toggle('active', !state.muted);
+      });
+
+      // Modal Pilih Mesin (1 - 24 Silinder)
+      const modal = document.getElementById('engineModal');
+      document.getElementById('btnOpenModal').addEventListener('click', () => modal.classList.add('open'));
+      document.getElementById('btnCloseModal').addEventListener('click', () => modal.classList.remove('open'));
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) modal.classList.remove('open');
+      });
+
+      function buildPresetLists() {
+        const containers = {
+          small: document.getElementById('presetSmall'),
+          mid: document.getElementById('presetMid'),
+          monster: document.getElementById('presetMonster')
+        };
+
+        ENGINE_PRESETS.forEach((preset) => {
+          const btn = document.createElement('button');
+          btn.className = 'preset-item';
+          btn.innerHTML = `<div class="preset-title">${preset.name}</div><div class="preset-desc">${preset.desc}</div>`;
+          btn.addEventListener('click', () => {
+            configureEngine(preset);
+            modal.classList.remove('open');
+            showToast(`Terpasang: ${preset.name}`);
+          });
+          containers[preset.group].appendChild(btn);
+        });
+      }
+
+      // Custom Engine Builder
+      const customCylRange = document.getElementById('customCylRange');
+      const customCylLabel = document.getElementById('customCylLabel');
+      customCylRange.addEventListener('input', () => {
+        customCylLabel.textContent = customCylRange.value;
+      });
+
+      document.getElementById('btnApplyCustom').addEventListener('click', () => {
+        const cyl = parseInt(customCylRange.value, 10);
+        const layout = document.getElementById('customLayout').value;
+        const angle = parseInt(document.getElementById('customAngle').value, 10);
+        const layoutName = layout === 'inline' ? 'Inline' : layout === 'boxer' ? 'Boxer' : layout === 'w' ? 'W' : 'V';
+
+        configureEngine({
+          id: 'custom',
+          name: `Custom ${layoutName}-${cyl} (${angle}°)`,
+          desc: `${cyl} Cyl • Custom Build`,
+          cylinders: cyl,
+          layout,
+          bankAngle: layout === 'inline' ? 0 : layout === 'boxer' ? 180 : angle,
+          crankType: 'even',
+          cc: cyl * 500,
+          maxRpm: 18000,
+          sound: cyl >= 10 ? 'f1' : cyl === 2 && angle === 45 ? 'muscle' : 'racing'
+        });
+
+        modal.classList.remove('open');
+        showToast(`Mesin Custom ${layoutName}-${cyl} terpasang!`);
+      });
+
+      // Init Pertama Kali
+      buildPresetLists();
+      configureEngine(ENGINE_PRESETS[1]); // Default: V-Twin 90° L-Twin
+      requestAnimationFrame(mainLoop);
+    })();
+  </script>
+</body>
+</html>
